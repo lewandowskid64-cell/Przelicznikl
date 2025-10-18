@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Oblicz ile siana potrzebujesz</title>
+
+  <!-- 🧩 Manifest PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2b6cb0">
+
+  <style>
+    :root{
+      --bg:#f7f7f9;
+      --card:#ffffff;
+      --accent:#2b6cb0;
+      --muted:#666;
+    }
+    body{
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      margin:0;
+      padding:20px;
+      background:linear-gradient(180deg, #eef3fb 0%, var(--bg) 100%);
+      color:#111;
+    }
+    .container{max-width:520px;margin:0 auto;}
+    header{text-align:center;margin-bottom:18px;}
+    h1{margin:6px 0 0;font-size:20px;letter-spacing:0.2px;}
+    .card{
+      background:var(--card);
+      border-radius:12px;
+      padding:18px;
+      box-shadow:0 6px 18px rgba(30,40,60,0.06);
+    }
+    label{display:block;margin-top:12px;font-weight:600;font-size:14px;}
+    input[type="number"]{
+      width:100%;padding:10px 12px;margin-top:6px;font-size:16px;
+      border-radius:8px;border:1px solid #ddd;box-sizing:border-box;
+    }
+    .note{font-size:13px;color:var(--muted);margin-top:8px}
+    .row{display:flex;gap:8px;margin-top:14px;align-items:center;}
+    button{
+      background:var(--accent);color:white;border:none;
+      padding:12px 14px;border-radius:10px;font-size:16px;cursor:pointer;flex:1;
+    }
+    button:disabled{opacity:0.6;cursor:not-allowed}
+    .result{margin-top:14px;padding:12px;background:#f1f6ff;border-radius:8px;font-weight:700;}
+    .error{color:#9b2c2c;margin-top:8px;font-weight:600}
+    footer{font-size:12px;color:var(--muted);margin-top:12px;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Oblicz ile siana potrzebujesz</h1>
+      <p class="note">Szybkie przeliczenie kosztu przejazdu</p>
+    </header>
+
+    <div class="card">
+      <form id="calcForm" onsubmit="return false;">
+        <label for="consumption">Ile pali Twoja furka (L/100 km)</label>
+        <input id="consumption" type="number" step="any" inputmode="decimal" placeholder="np. 6.5" />
+
+        <label for="price">Jaka jest teraz cena Twojego paliwa (zł / litr)</label>
+        <input id="price" type="number" step="any" inputmode="decimal" placeholder="np. 6.79" />
+
+        <label for="distance">Ile kilometrów chcesz przejechać (km)</label>
+        <input id="distance" type="number" step="1" inputmode="numeric" placeholder="np. 120" />
+
+        <div class="row"><button id="calcBtn">Oblicz koszt</button></div>
+        <div id="error" class="error" style="display:none"></div>
+        <div id="result" class="result" style="display:none"></div>
+      </form>
+    </div>
+
+    <footer>Uwaga: kalkulacja oparta na założeniu że zużycie to L/100 km.</footer>
+  </div>
+
+  <script>
+    const consumptionInput = document.getElementById('consumption');
+    const priceInput = document.getElementById('price');
+    const distanceInput = document.getElementById('distance');
+    const errorBox = document.getElementById('error');
+    const resultBox = document.getElementById('result');
+    const calcBtn = document.getElementById('calcBtn');
+
+    function showError(msg){ errorBox.textContent = msg; errorBox.style.display = 'block'; resultBox.style.display = 'none'; }
+    function showResult(txt){ resultBox.innerHTML = txt; resultBox.style.display = 'block'; errorBox.style.display = 'none'; }
+
+    function parseNumber(el){ return Number(el.value || NaN); }
+
+    calcBtn.addEventListener('click', () => {
+      const cons=parseNumber(consumptionInput), price=parseNumber(priceInput), dist=parseNumber(distanceInput);
+      if(isNaN(cons)||isNaN(price)||isNaN(dist)||cons<=0||price<=0||dist<=0)
+        return showError('Wypełnij wszystkie pola prawidłowymi liczbami większymi od zera.');
+      const liters=(dist/100)*cons, cost=liters*price;
+      showResult(`Potrzebne paliwo: <strong>${liters.toFixed(2).replace('.', ',')} L</strong><br>Szacowany koszt: <strong>${cost.toFixed(2).replace('.', ',')} zł</strong>`);
+    });
+
+    [consumptionInput,priceInput,distanceInput].forEach(inp=>{
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')calcBtn.click();});
+    });
+
+    // 🧩 Rejestracja service workera
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
